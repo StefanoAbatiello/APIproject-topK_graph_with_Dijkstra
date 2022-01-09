@@ -59,7 +59,7 @@ int main() {
                         printf("i:%d j:%d value:%ld\n", i, j, value);
                         graphEx[i][j] = value;
                     }else {
-                        printf("%c", c);
+                        printf("ho letto un a capo%c\n", c);
                         j--;
                     }
 
@@ -71,10 +71,9 @@ int main() {
                     }
                     printf("\n");
                 }
-                score=dijkstra(&graphEx[0][0],numNodes);
-                printf("Graph score:%ld\n",score);
             }
-
+            score=dijkstra(&graphEx[0][0],numNodes);
+            printf("Graph score:%ld\n",score);
         }
     }
 
@@ -97,23 +96,27 @@ long int dijkstra(long int *graphEx, long int numNodes) {
     printf("\n");
 
     for (int i=0;i<numNodes;i++){
-        int min= findIndexOfMin(&dist[0], numNodes);
-        printf("nodo a distanza min:%d\n",min);
-        printf("distanza del nodo min:%ld\n",dist[min]);
+        int min;
+        if(i==0)
+            min=0;
+        else
+            min= findIndexOfMin(&dist[0], numNodes);
+        long int distMin=dist[min];
+        dist[min]=-1;        printf("nodo a distanza min:%d\n",min);
+        printf("distanza del nodo min:%ld\n",distMin);
         for (int j = 0; j < numNodes; j++) {
             printf("valuto dist del nodo %d:%ld\n",j,*(graphEx+min*numNodes+j));
             if(*(graphEx+min*numNodes+j)>0) {
-                long int newDist = dist[min] + *(graphEx+min*numNodes+j);
+                long int newDist = distMin + *(graphEx+min*numNodes+j);
                 printf("Newdist:%ld\n",newDist);
-                if (newDist < dist[j] && newDist > 0 && dist[j] > 0) {
+                if ((newDist < dist[j]&&dist[j]>0)||(newDist > 0 && dist[j] == 0)) {
                     printf("ho trovato un percorso più corto per il nodo %d di costo:%ld\n", j, newDist);
                     dist[j] = newDist;
                 }
             }
         }
 
-        distTot=distTot+dist[min];
-        dist[min]=-1;
+        distTot=distTot+distMin;
         for (int k = 0; k < numNodes; k++) {
             printf("distanza attuale del nodo %d: %ld\n",k, dist[k]);
         }printf("valore attuale distTot:%ld\n\n",distTot);
@@ -125,8 +128,8 @@ long int dijkstra(long int *graphEx, long int numNodes) {
 
 int findIndexOfMin(long int *dist,long int numNodes) {
     int min=0;
-    for(int i=0;i< numNodes;i++) {
-        if ((dist[i] > 0 && dist[i] < dist[min])||(dist[min] < 0))
+    for(int i=1;i< numNodes;i++) {
+        if ((dist[i] > 0 && dist[i] < dist[min])||(dist[min] <= 0))
             min = i;
     }
     return min;
