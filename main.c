@@ -47,11 +47,10 @@ int main() {
     printf("numNodes:%ld\n",numNodes);
     printf("k:%ld\n",k);
     printf("\n\n -*-*-*-*-*-*-*-*-*-*-*-*- \n\n");
-     */
+    */
 
     while ((c = getchar_unlocked()) != EOF){
         if(c == 'A'){
-            graphId++;
             //printf("%c",c);
             while((c=getchar_unlocked())<48 || c>=58);
                 //printf("%c",c);
@@ -60,51 +59,50 @@ int main() {
                     long int value=0;
                     if(i==0 && j==0)
                         value = c-48;
-                     while ((c=getchar_unlocked())!=44&&c>=48 && c<58 && c!='\n') {
+                    while ((c=getchar_unlocked())>=48 && c<58 && c!=',' &&c!='\n') {
+                        //while ((c=getchar_unlocked())!=44&&c>=48 && c<58 && c!='\n') {
                         //printf("leggo carattere numero:%d\n", i);
                         //printf("ed è:%d\n", c - 48);
                         value = (value * 10) + (c - 48);
                     }
-                    if(c!='\n') {
-                        //printf("i:%d j:%d value:%ld\n", i, j, value);
-                        graphEx[i][j] = value;
-                    }else {
-                        //printf("ho letto un a capo%c\n", c);
-                        j--;
-                    }
-
+                    //printf("value:%ld\n",value);
+                    graphEx[i][j] = value;
                 }
-                /*printf("\n");
-                for (int l = 0; l < numNodes; l++) {
-                    for (int m = 0; m < numNodes; m++) {
-                        printf("%ld,",graphEx[l][m]);
-                    }
-                    printf("\n");
-                }
-                 */
             }
+            /*
+            printf("\n");
+            printf("Graph %ld \n",graphId);
+            for (int l = 0; l < numNodes; l++) {
+                for (int m = 0; m < numNodes; m++) {
+                    printf("%ld,",graphEx[l][m]);
+                }
+                printf("\n");
+            }
+             */
             score=dijkstra(&graphEx[0][0],numNodes);
-            //printf("Graph score:%ld\n",score);
+            //printf("\nGraph %ld score:%ld\n",graphId,score);
             if(numGraph<k){
                 for (int i = 1; i < k+1; i++) {
                     if(topK[i].Id==-1){
                         topK[i].Id=graphId;
                         topK[i].value=score;
                         numGraph++;
-                        /*printf("\nHo appena inserito un nuovo elemento\n");
-                        for (long int j = numGraph; j>0; j--) {
-                            printf("Graph:%ld --> score:%ld\n",topK[j].Id,topK[j].value);
-                        }
-                         */
+                        //printf("Ho appena inserito un nuovo elemento\n");
                         break;
                     }
                 }
-                for (long int i = numGraph/2; i > 0 ; i--) {
-                    heapify(topK, numGraph, 1);
-                }
-                /*printf("Ho riordinato l'heap\n");
+                /*
                 for (long int j = numGraph; j>0; j--) {
-                    printf("Graph:%ld --> score:%ld\n",topK[j].Id,topK[j].value);
+                    printf("%ld:Graph:%ld --> score:%ld\n",j,topK[j].Id,topK[j].value);
+                }
+                 */
+                for (long int i = numGraph/2; i > 0 ; i--) {
+                    heapify(topK, numGraph, i);
+                }
+                /*
+                printf("Ho riordinato l'heap\n");
+                for (long int j = numGraph; j>0; j--) {
+                    printf("%ld:Graph:%ld --> score:%ld\n",j,topK[j].Id,topK[j].value);
                 }
                  */
             } else{
@@ -112,16 +110,20 @@ int main() {
                     topK[1].value=score;
                     topK[1].Id=graphId;
                 }
-                //printf("\nHo appena sostituito un elemento\n");
-                for (long int i = numGraph/2; i > 0 ; i--) {
-                    heapify(topK, numGraph, 1);
-                }
-                /*printf("Ho riordinato l'heap\n");
-                for (long int j = numGraph; j>0; j--) {
-                    printf("Graph:%ld --> score:%ld\n",topK[j].Id,topK[j].value);
-                }
-                 */
+                /*
+                printf("\nHo appena sostituito un elemento\n");
+                for (long int j = numGraph; j>0; j--)
+                    printf("%ld:Graph:%ld --> score:%ld\n",j,topK[j].Id,topK[j].value);
+                */
+                for (long int j = numGraph; j>0; j--)
+                    heapify(topK, numGraph, j);
+                /*
+                printf("Ho riordinato l'heap\n");
+                for (long int j = numGraph; j>0; j--)
+                    printf("%ld:Graph:%ld --> score:%ld\n",j,topK[j].Id,topK[j].value);
+                */
             }
+            graphId++;
         }else if(c== 'T'){
             while((c=getchar_unlocked())!='K');
             printTopK(topK,numGraph);
@@ -132,7 +134,7 @@ int main() {
 }
 
 void printTopK(struct Graph *topK, long int numGraph) {
-    for (long int j = numGraph; j>0; j--) {
+    for (long int j = 1; j<numGraph+1; j++) {
         printf("%ld ",topK[j].Id);
     }
     printf("\n");
@@ -198,14 +200,23 @@ int findIndexOfMin(long int *dist,long int numNodes) {
 }
 
 void heapify(struct Graph *topK, long int numGraph, long int n) {
+    //printf("sono nella heapify\n");
     long int leftSon=2*n,rightSon=(2*n)+1,posMax;
-    if (leftSon<=numGraph && topK[leftSon].Id!=-1 && topK[leftSon].value>topK[n].value)
-        posMax=leftSon;
-    else
-        posMax=n;
-    if (rightSon<=numGraph && topK[rightSon].Id!=-1 && topK[rightSon].value>topK[posMax].value)
-        posMax=rightSon;
+    if (leftSon<=numGraph && topK[leftSon].Id!=-1 && topK[leftSon].value>topK[n].value) {
+        posMax = leftSon;
+        //printf("il grafo in posizione %ld è minore del figlio sinistro\n", n);
+    }else {
+        //printf("il grafo in posizione %ld è maggiore del figlio sinistro\n", n);
+        posMax = n;
+    }
+    if (rightSon<=numGraph && topK[rightSon].Id!=-1 && topK[rightSon].value>topK[posMax].value) {
+        posMax = rightSon;
+        //printf("il grafo in posizione %ld è minore del figlio destro\n", posMax);
+    }else {
+        //printf("il grafo in posizione %ld è maggiore del figlio destro\n", posMax);
+    }
     if (posMax!=n) {
+        //printf("c'è bisogno di fare uno swap\n");
         swap(topK, n, posMax);
         heapify(topK, numGraph, posMax);
     }
