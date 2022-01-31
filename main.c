@@ -38,9 +38,11 @@ int main() {
     long int graphEx[numNodes][numNodes];
 
     Graph topK[k+1];
+    /*
     for (int i = 0; i < k+1; i++) {
         topK[i].Id=-1;
     }
+    */
 
     /*
     printf("\n\n -*-*-*-*-*-*-*-*-*-*-*-*- \n\n");
@@ -82,6 +84,10 @@ int main() {
             score=dijkstra(&graphEx[0][0],numNodes);
             //printf("\nGraph %ld score:%ld\n",graphId,score);
             if(numGraph<k){
+                numGraph++;
+                topK[numGraph].Id=graphId;
+                topK[numGraph].value=score;
+                /*
                 for (int i = 1; i < k+1; i++) {
                     if(topK[i].Id==-1){
                         topK[i].Id=graphId;
@@ -91,6 +97,7 @@ int main() {
                         break;
                     }
                 }
+                 */
                 /*
                 for (long int j = numGraph; j>0; j--) {
                     printf("%ld:Graph:%ld --> score:%ld\n",j,topK[j].Id,topK[j].value);
@@ -134,9 +141,11 @@ int main() {
 }
 
 void printTopK(struct Graph *topK, long int numGraph) {
-    for (long int j = 1; j<numGraph+1; j++) {
+    for (long int j = 1; j<numGraph; j++) {
         printf("%ld ",topK[j].Id);
     }
+    if(numGraph>0)
+        printf("%ld",topK[numGraph].Id);
     printf("\n");
 }
 
