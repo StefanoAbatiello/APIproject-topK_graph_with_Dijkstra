@@ -1,4 +1,11 @@
 #include <stdio.h>
+#include <malloc.h>
+
+typedef struct Node {
+    int id;
+    long int dist;
+    struct Node *pred;
+} Node;
 
 typedef struct Graph {
     long int Id;
@@ -7,13 +14,19 @@ typedef struct Graph {
 
 long int dijkstra(long int * ,long int );
 
-int findIndexOfMin(long int *, long int );
+void max_heapify(struct Graph *, long int, long int );
 
-void heapify(struct Graph *, long int, long int );
-
-void swap(struct Graph *, long int, long int );
+void swap_graph(struct Graph *, long int, long int );
 
 void printTopK(struct Graph *,long int);
+
+long insertNode(Node *, Node , long *);
+
+void swap_node(struct Node *, long int, long int);
+
+void min_Heapify(Node *, long int *, long int);
+
+Node deleteMin(Node *, long int *);
 
 int main() {
 
@@ -35,7 +48,7 @@ int main() {
         //printf("ed è:%d\n",c-48);
         k = (k*10) + (c - 48) ;
     }
-    long int graphEx[numNodes][numNodes];
+    long int *graphEx= malloc(sizeof (long int)*(numNodes*numNodes));
 
     Graph topK[k+1];
     /*
@@ -56,8 +69,8 @@ int main() {
             //printf("%c",c);
             while((c=getchar_unlocked())<48 || c>=58);
                 //printf("%c",c);
-            for(int i=0;i<numNodes;i++){
-                for (int j = 0;j<numNodes;j++) {
+            for (int i = 0; i < numNodes; i++) {
+                for (long int j = i*numNodes; j < (i+1)*numNodes; j++) {
                     long int value=0;
                     if(i==0 && j==0)
                         value = c-48;
@@ -68,7 +81,7 @@ int main() {
                         value = (value * 10) + (c - 48);
                     }
                     //printf("value:%ld\n",value);
-                    graphEx[i][j] = value;
+                    graphEx[j] = value;
                 }
             }
             /*
@@ -81,8 +94,8 @@ int main() {
                 printf("\n");
             }
              */
-            score=dijkstra(&graphEx[0][0],numNodes);
-            //printf("\nGraph %ld score:%ld\n",graphId,score);
+            score=dijkstra(graphEx,numNodes);
+            printf("\nGraph %ld score:%ld\n",graphId,score);
             if(numGraph<k){
                 numGraph++;
                 topK[numGraph].Id=graphId;
@@ -104,7 +117,7 @@ int main() {
                 }
                  */
                 for (long int i = numGraph/2; i > 0 ; i--) {
-                    heapify(topK, numGraph, i);
+                    max_heapify(topK, numGraph, i);
                 }
                 /*
                 printf("Ho riordinato l'heap\n");
@@ -123,7 +136,7 @@ int main() {
                     printf("%ld:Graph:%ld --> score:%ld\n",j,topK[j].Id,topK[j].value);
                 */
                 for (long int j = numGraph; j>0; j--)
-                    heapify(topK, numGraph, j);
+                    max_heapify(topK, numGraph, j);
                 /*
                 printf("Ho riordinato l'heap\n");
                 for (long int j = numGraph; j>0; j--)
@@ -151,64 +164,104 @@ void printTopK(struct Graph *topK, long int numGraph) {
 
 long int dijkstra(long int *graphEx, long int numNodes) {
     long int distTot=0;
-    long int dist[numNodes];
-    dist[0]=0;
+    long int QSize=0;
+    Node *Q=malloc((numNodes-1)* sizeof(Node));
     for(int j=1;j<numNodes;j++) {
-        //printf("a%d\n",j);
-        dist[j] = *(graphEx+j);
-        //printf("b%d\n",j);
+        Node node;
+        node.id=j;
+        node.dist=graphEx[j];
+        node.pred=NULL;
+        QSize=insertNode(Q, node, &QSize);
+        //printf("nodo %d con dist:%ld\n",node.id,node.dist);
     }
-
-    /*
-    for (int i = 0; i < numNodes; ++i) {
-        printf("distanza iniziale del nodo %d: %ld\n",i, dist[i]);
+    /*printf("ho creato il min-heap con dimensione:%ld\n",QSize);
+    for (int i = 0; i < QSize; i++) {
+        printf("nodo con id %d e con dist %ld\n",Q[i].id,Q[i].dist);
     }
-    printf("\n");
      */
-
-    for (int i=0;i<numNodes;i++){
-        int min;
-        if(i==0)
-            min=0;
-        else
-            min= findIndexOfMin(&dist[0], numNodes);
-        long int distMin=dist[min];
-        dist[min]=-1;
-        //printf("nodo a distanza min:%d\n",min);
-        //printf("distanza del nodo min:%ld\n",distMin);
-        for (int j = 0; j < numNodes; j++) {
-            //printf("valuto dist del nodo %d:%ld\n",j,*(graphEx+min*numNodes+j));
-            if(*(graphEx+min*numNodes+j)>0) {
-                long int newDist = distMin + *(graphEx+min*numNodes+j);
-                //printf("Newdist:%ld\n",newDist);
-                if ((newDist < dist[j]&&dist[j]>0)||(newDist > 0 && dist[j] == 0)) {
-                    //printf("ho trovato un percorso più corto per il nodo %d di costo:%ld\n", j, newDist);
-                    dist[j] = newDist;
+    while (QSize>0){
+        Node node= deleteMin(Q, &QSize);
+        //printf("nodo più vicino:%d, ha distanza:%ld\n",node.id,node.dist);
+        //printf("ora min-heap ha dimensione:%ld\n",QSize);
+        distTot=distTot+node.dist;
+        /*printf("distanza totale attuale:%ld\n",distTot);
+        for (int i = 0; i < QSize; i++) {
+            printf("nodo con id %d e con dist %ld\n",Q[i].id,Q[i].dist);
+        }
+         */
+        for (int i = 0; i < QSize; i++) {
+            //printf("distanza:%ld\n",graphEx[node.id*numNodes+Q[i].id]);
+            if(graphEx[node.id*numNodes+Q[i].id]>0) {
+                //printf("valuto distanza del nodo %d dal nodo %d\n", Q[i].id, node.id);
+                long int dist = node.dist + (graphEx[node.id*numNodes+Q[i].id]);
+                //printf("dist=%ld\n", dist);
+                if (dist < Q[i].dist || Q[i].dist == 0) {
+                    //printf("valore della distanza del nodo %d da cambiare nell'heap\n", Q[i].id);
+                    Q[i].dist = dist;
+                    Q[i].pred = &node;
+                    min_Heapify(Q, &QSize, QSize / 2);
                 }
             }
         }
-
-        distTot=distTot+distMin;
-        /*for (int k = 0; k < numNodes; k++) {
-            printf("distanza attuale del nodo %d: %ld\n",k, dist[k]);
-        }printf("valore attuale distTot:%ld\n\n",distTot);
-         */
     }
-
-    //printf("distTot:%ld\n",distTot);
     return distTot;
 }
 
-int findIndexOfMin(long int *dist,long int numNodes) {
-    int min=0;
-    for(int i=1;i< numNodes;i++) {
-        if ((dist[i] > 0 && dist[i] < dist[min])||(dist[min] <= 0))
-            min = i;
-    }
-    return min;
+Node deleteMin(Node *Q, long int *QSize) {
+    //PRENDO IL PRIMO, SPOSTO L'ULTIMO NEL PRIMO, DIMINUISCO QSIZE E FACCIO HEAPIFY
+    Node  node=Q[0];
+    Q[0].dist=Q[(*QSize)-1].dist;
+    Q[0].pred=Q[(*QSize)-1].pred;
+    Q[0].id=Q[(*QSize)-1].id;
+    (*QSize)--;
+    min_Heapify(Q,QSize,(*QSize)/2);
+    return node;
 }
 
-void heapify(struct Graph *topK, long int numGraph, long int n) {
+long insertNode(Node *Q, Node node, long int *QSize) {
+    //printf("sono in accodaNode\n");
+    Q[*QSize]=node;
+    (*QSize)++;
+    min_Heapify(Q, QSize, (*QSize)/2);
+    return *QSize;
+}
+
+void min_Heapify(struct Node *Q, long int *QSize, long int n) {
+    //printf("sono nella heapify\n");
+    long int leftSon=2*n,rightSon=(2*n)+1,posMin;
+    if (leftSon<=*QSize && (Q[leftSon].dist<Q[n].dist || Q[n].dist==0) && Q[leftSon].dist>0) {
+        posMin = leftSon;
+        //printf("il grafo in posizione %ld è minore del figlio sinistro\n", n);
+    }else {
+        //printf("il grafo in posizione %ld è maggiore del figlio sinistro\n", n);
+        posMin = n;
+    }
+    if (rightSon<=*QSize && (Q[rightSon].dist<Q[posMin].dist || Q[posMin].dist==0) && Q[rightSon].dist>0) {
+        posMin = rightSon;
+        //printf("il grafo in posizione %ld è minore del figlio destro\n", posMax);
+    }else {
+        //printf("il grafo in posizione %ld è maggiore del figlio destro\n", posMax);
+    }
+    if (posMin!=n) {
+        //printf("c'è bisogno di fare uno swap\n");
+        swap_node(Q, n, posMin);
+        min_Heapify(Q, QSize, posMin);
+    }
+}
+
+void swap_node(struct Node *Q, long int n, long posMin) {
+    long int tempValue=Q[n].dist;
+    int tempId=Q[n].id;
+    Node *tempPred=Q[n].pred;
+    Q[n].id=Q[posMin].id;
+    Q[n].pred=Q[posMin].pred;
+    Q[n].dist=Q[posMin].dist;
+    Q[posMin].pred=tempPred;
+    Q[posMin].dist=tempValue;
+    Q[posMin].id=tempId;
+}
+
+void max_heapify(struct Graph *topK, long int numGraph, long int n) {
     //printf("sono nella heapify\n");
     long int leftSon=2*n,rightSon=(2*n)+1,posMax;
     if (leftSon<=numGraph && topK[leftSon].Id!=-1 && topK[leftSon].value>topK[n].value) {
@@ -226,12 +279,12 @@ void heapify(struct Graph *topK, long int numGraph, long int n) {
     }
     if (posMax!=n) {
         //printf("c'è bisogno di fare uno swap\n");
-        swap(topK, n, posMax);
-        heapify(topK, numGraph, posMax);
+        swap_graph(topK, n, posMax);
+        max_heapify(topK, numGraph, posMax);
     }
 }
 
-void swap(struct Graph *topK, long int n, long posMax) {
+void swap_graph(struct Graph *topK, long int n, long posMax) {
     long int tempId,tempValue;
     tempId=topK[n].Id;
     tempValue=topK[n].value;
